@@ -1,12 +1,4 @@
 {
-    "version": 2,
-    "buildCommand": "npm install",
-    "devCommand": "vercel dev",
-    "functions": {
-          "api/**/*.js": {
-                  "maxDuration": 300,
-                  "memory": 3008
-          }
-    }
+      "version": 2,
+      "buildCommand": "npm install"
 }
-
