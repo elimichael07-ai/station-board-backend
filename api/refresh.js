@@ -1,0 +1,86 @@
+/**
+ * Station Board Master Refresh Endpoint
+ * Coordinates all service scrapes and returns unified JSON
+ * 
+ * Usage: GET /api/refresh?token=YOUR_SECRET_TOKEN
+ * Returns: { ecampus, castlebranch, pearson, notion, gmail, lastRefresh }
+ */
+
+import { scrapECampus } from '../services/ecampus.js';
+import { scrapCastleBranch } from '../services/castlebranch.js';
+import { scrapPearson } from '../services/pearson.js';
+import { pullNotionNotes } from '../services/notion.js';
+import { pullGmailTodos } from '../services/gmail.js';
+import { getStoredCredentials, updateLastRefresh } from '../utils/credentials.js';
+
+export default async function handler(req, res) {
+  // Set CORS headers
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST');
+  res.setHeader('Content-Type', 'application/json');
+
+  // Validate request
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
+  if (req.method !== 'GET' && req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  const { token } = req.query;
+  const validToken = process.env.REFRESH_TOKEN;
+
+  if (!token || token !== validToken) {
+    return res.status(401).json({ error: 'Unauthorized: Invalid or missing token' });
+  }
+
+  try {
+    console.log('[REFRESH] Starting full data pull at', new Date().toISOString());
+
+    // Get stored credentials (encrypted in Vercel KV)
+    const credentials = await getStoredCredentials();
+    if (!credentials) {
+      return res.status(400).json({ error: 'No credentials found. Run setup first.' });
+    }
+
+    // Run all scrapers in parallel where possible
+    const [ecampusData, castlebranchData, pearsonData, notionData, gmailData] = await Promise.all([
+      scrapECampus(credentials.ecampus),
+      scrapCastleBranch(credentials.castlebranch),
+      scrapPearson(credentials.pearson),
+      pullNotionNotes(credentials.notion),
+      pullGmailTodos(credentials.gmail),
+    ]).catch(err => {
+      console.error('[REFRESH] Error during parallel scrape:', err.message);
+      throw err;
+    });
+
+    // Update last refresh time
+    await updateLastRefresh();
+
+    const response = {
+      success: true,
+      timestamp: new Date().toISOString(),
+      data: {
+        ecampus: ecampusData,
+        castlebranch: castlebranchData,
+        pearson: pearsonData,
+        notion: notionData,
+        gmail: gmailData,
+      },
+      lastRefresh: new Date().toISOString(),
+    };
+
+    console.log('[REFRESH] Complete. Returning data.');
+    return res.status(200).json(response);
+
+  } catch (error) {
+    console.error('[REFRESH] Error:', error);
+    return res.status(500).json({
+      error: 'Refresh failed',
+      message: error.message,
+      timestamp: new Date().toISOString(),
+    });
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "name": "station-board-refresh-backend",
+  "version": "1.0.0",
+  "description": "Backend API for automated Station Board refresh across eCampus, CastleBranch, Pearson, Notion, Gmail",
+  "main": "api/refresh.js",
+  "scripts": {
+    "dev": "vercel dev",
+    "build": "echo 'Built automatically by Vercel'",
+    "test": "node test.js"
+  },
+  "keywords": ["ecampus", "castlebranch", "pearson", "notion", "gmail"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "puppeteer": "^21.6.0",
+    "puppeteer-extra": "^3.3.6",
+    "puppeteer-extra-plugin-stealth": "^2.11.2",
+    "@notionhq/client": "^2.2.14",
+    "google-auth-library": "^9.2.0",
+    "googleapis": "^118.0.0",
+    "node-cache": "^5.1.2",
+    "dotenv": "^16.3.1",
+    "crypto": "builtin",
+    "axios": "^1.6.5"
+  },
+  "devDependencies": {
+    "vercel": "^33.5.0"
+  }
+}
