@@ -1,4 +1,4 @@
-# Station Board Refresh Backend
+# Station Board Refresh Backend<!-- deployed -->
 
 Automated backend API that maintains logins to eCampus, CastleBranch, Pearson, Notion, and Gmail to refresh your Station Board artifact with fresh data on demand.
 
