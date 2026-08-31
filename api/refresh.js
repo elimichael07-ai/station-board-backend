@@ -36,12 +36,12 @@ export default async function handler(req, res) {
   }
 
   try {
-    console.log('[REFRESH] Starting full data pull at', new Date().toISOString());
-
-    // Get stored credentials (encrypted in Vercel KV)
-    const credentials = await getStoredCredentials();
-    if (!credentials) {
-      return res.status(400).json({ error: 'No credentials found. Run setup first.' });
+     let credentials;
+    try {
+      credentials = await getStoredCredentials();
+    } catch (e) {
+      console.log('[REFRESH] Could not load credentials:', e.message);
+      credentials = null;
     }
 
     // Run all scrapers in parallel where possible
