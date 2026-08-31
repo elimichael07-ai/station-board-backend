@@ -1,34 +1,11 @@
 {
-  "version": 2,
-  "buildCommand": "npm install",
-  "devCommand": "vercel dev",
-  "env": {
-    "ENCRYPTION_KEY": {
-      "description": "Encryption key for credentials (auto-generated, don't change)"
-    },
-    "REFRESH_TOKEN": {
-      "description": "API token for triggering refresh - set this to something random"
-    },
-    "SETUP_TOKEN": {
-      "description": "One-time token for initial setup - change after setup complete"
-    },
-    "CREDENTIALS_JSON": {
-      "description": "Encrypted JSON of all credentials - populated during setup"
-    },
-    "GMAIL_CLIENT_ID": {
-      "description": "Google OAuth2 Client ID"
-    },
-    "GMAIL_CLIENT_SECRET": {
-      "description": "Google OAuth2 Client Secret"
-    },
-    "GMAIL_REDIRECT_URL": {
-      "description": "Gmail OAuth2 redirect URL (usually your-vercel-url/api/auth/gmail/callback)"
+    "version": 2,
+    "buildCommand": "npm install",
+    "devCommand": "vercel dev",
+    "functions": {
+          "api/**/*.js": {
+                  "maxDuration": 300,
+                  "memory": 3008
+          }
     }
-  },
-  "functions": {
-    "api/**/*.js": {
-      "maxDuration": 300,
-      "memory": 3008
-    }
-  }
 }
