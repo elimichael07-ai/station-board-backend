@@ -6,6 +6,7 @@
 
 import puppeteer from 'puppeteer-extra';
 import StealthPlugin from 'puppeteer-extra-plugin-stealth';
+import chromium from '@sparticuz/chromium';
 
 puppeteer.use(StealthPlugin());
 
@@ -22,11 +23,13 @@ export async function scrapECampus(credentials) {
   try {
     console.log('[eCampus] Starting scrape...');
     
-    browser = await puppeteer.launch({
-      headless: 'new',
-      args: ['--no-sandbox', '--disable-setuid-sandbox'],
-    });
-
+      browser = await puppeteer.launch({
+                args: chromium.args,
+                defaultViewport: chromium.defaultViewport,
+                executablePath: await chromium.executablePath(),
+                headless: chromium.headless,
+      });
+    
     const page = await browser.newPage();
     await page.setViewport({ width: 1280, height: 720 });
 
