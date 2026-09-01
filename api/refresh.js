@@ -42,12 +42,15 @@ export default async function handler(req, res) {
     } catch (e) {
       console.log('[REFRESH] Could not load credentials:', e.message);
       credentials = null;
-    }      return res.status(503).json({ 
+    }
+    
+        if (!credentials) {return res.status(503).json({ 
         error: 'Credentials not configured',
         message: 'No credentials found. Complete the setup endpoint first.',
         setup_url: '/api/setup',
         status: 'setup_required'
       });
+                          }
 
     // Run all scrapers in parallel where possible
     const [ecampusData, castlebranchData, pearsonData, notionData, gmailData] = await Promise.all([
