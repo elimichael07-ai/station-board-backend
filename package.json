@@ -12,7 +12,8 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "puppeteer": "^21.6.0",
+        "puppeteer-core": "^22.13.1",
+        "@sparticuz/chromium": "^123.0.1",
     "puppeteer-extra": "^3.3.6",
     "puppeteer-extra-plugin-stealth": "^2.11.2",
     "@notionhq/client": "^2.2.14",
