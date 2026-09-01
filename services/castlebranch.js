@@ -5,11 +5,8 @@
 
 import puppeteer from 'puppeteer-extra';
 import StealthPlugin from 'puppeteer-extra-plugin-stealth';
-import chromium from '@sparticuz/chromium';
 
 puppeteer.use(StealthPlugin());
-chromium.setHeadlessMode = true;
-chromium.setGraphicsMode = false;
 
 const CASTLEBRANCH_BASE = 'https://castlebranch.com';
 
@@ -17,13 +14,10 @@ export async function scrapCastleBranch(credentials) {
   let browser;
   try {
     console.log('[CastleBranch] Starting scrape...');
-      browser = await puppeteer.launch({
-                args: chromium.args,
-                defaultViewport: chromium.defaultViewport,
-                executablePath: await chromium.executablePath(),
-                headless: chromium.headless,
-      });
-      
+          browser = await puppeteer.connect({
+                  browserWSEndpoint: `wss://production-sfo.browserless.io?token=${process.env.BROWSERLESS_API_KEY}`,
+          });
+    
     const page = await browser.newPage();
     await page.setViewport({ width: 1280, height: 720 });
 
