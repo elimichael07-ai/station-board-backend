@@ -8,6 +8,8 @@ import StealthPlugin from 'puppeteer-extra-plugin-stealth';
 import chromium from '@sparticuz/chromium';
 
 puppeteer.use(StealthPlugin());
+chromium.setHeadlessMode = true;
+chromium.setGraphicsMode = false;
 
 const CASTLEBRANCH_BASE = 'https://castlebranch.com';
 
