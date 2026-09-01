@@ -52,18 +52,19 @@ export default async function handler(req, res) {
       });
                           }
 
-    // Run all scrapers in parallel where possible
-    const [ecampusData, castlebranchData, pearsonData, notionData, gmailData] = await Promise.all([
-      scrapECampus(credentials.ecampus),
-      scrapCastleBranch(credentials.castlebranch),
-      scrapPearson(credentials.pearson),
-      pullNotionNotes(credentials.notion),
-      pullGmailTodos(credentials.gmail),
-    ]).catch(err => {
-      console.error('[REFRESH] Error during parallel scrape:', err.message);
-      throw err;
-    });
-
+          // Run scrapers sequentially to avoid Chromium binary spawn race conditions
+          let ecampusData, castlebranchData, pearsonData, notionData, gmailData;
+          try {
+                    ecampusData = await scrapECampus(credentials.ecampus);
+                    castlebranchData = await scrapCastleBranch(credentials.castlebranch);
+                    pearsonData = await scrapPearson(credentials.pearson);
+                    notionData = await pullNotionNotes(credentials.notion);
+                    gmailData = await pullGmailTodos(credentials.gmail);
+          } catch (err) {
+                    console.error('[REFRESH] Error during sequential scrape:', err.message);
+                    throw err;
+          }
+    
     // Update last refresh time
     await updateLastRefresh();
 
