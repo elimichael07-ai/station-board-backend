@@ -5,6 +5,7 @@
 
 import puppeteer from 'puppeteer-extra';
 import StealthPlugin from 'puppeteer-extra-plugin-stealth';
+import axios from 'axios';
 
 puppeteer.use(StealthPlugin());
 
@@ -15,8 +16,13 @@ export async function scrapPearson(credentials) {
   try {
     console.log('[Pearson] Starting scrape...');
 
+      const sessionRes = await axios.post(
+                'https://api.browserbase.com/v1/sessions',
+        { projectId: process.env.BROWSERBASE_PROJECT_ID },
+        { headers: { 'X-BB-API-Key': process.env.BROWSERBASE_API_KEY, 'Content-Type': 'application/json' } }
+              );
           browser = await puppeteer.connect({
-                  browserWSEndpoint: `wss://production-sfo.browserless.io?token=${process.env.BROWSERLESS_API_KEY}`,
+                    browserWSEndpoint: sessionRes.data.connectUrl,
           });
     
     const page = await browser.newPage();
