@@ -86,12 +86,14 @@ async function loginToECampus(page, credentials) {
       }
 
   try {
-          await page.type('input[name="usernameUserInput"]', credentials.username);
-          await page.type('input[name="password"]', credentials.password);
-          await page.click('button[type="submit"]');
-
-        await page.waitForNavigation({ waitUntil: 'networkidle2', timeout: 30000 });
-          console.log('[Pearson] eCampus login successful.');
+            await page.type('input[name="usernameUserInput"]', credentials.username);
+            await page.type('input[name="password"]', credentials.password);
+        
+            await Promise.all([
+                        page.waitForNavigation({ waitUntil: 'networkidle2', timeout: 30000 }),
+                        page.click('button[type="submit"]'),
+                      ]);
+        console.log('[Pearson] eCampus login successful.');
   } catch (err) {
           console.error('[Pearson] eCampus login error:', err.message);
           throw err;
