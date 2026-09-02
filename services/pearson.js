@@ -79,11 +79,9 @@ async function loginToECampus(page, credentials) {
     if (isLoggedIn) {
           console.log('[Pearson] Already logged into eCampus.');
           return;
-    }
-
-  try {
-        await page.type('input[name="usernameUserInput"]', credentials.username);
-        await page.type('input[name="password"]', credentials.appPassword);
+          try {
+              await page.type('input[name="usernameUserInput"]', credentials.username);
+                await page.type('input[name="password"]', credentials.password);
         await page.click('button[type="submit"]');
 
       await page.waitForNavigation({ waitUntil: 'networkidle2', timeout: 30000 });
