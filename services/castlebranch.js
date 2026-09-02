@@ -58,10 +58,14 @@ async function loginToCastleBranch(page, credentials) {
 
   // Fill login form
   try {
-      await page.type('input[name="username"]', credentials.username);
-          await page.type('input[name="password"]', credentials.password);
-    await page.click('button:has-text("Login"), input[type="submit"]');
-
+                await page.type('input[name="username"]', credentials.username);
+    await page.type('input[name="password"]', credentials.password);
+          await page.evaluate(() => {
+                    const btns = Array.from(document.querySelectorAll('button[type="submit"]'));
+                    const loginBtn = btns.find(b => b.textContent.trim().toLowerCase().includes('sign in')) || btns[0];
+                    if (loginBtn) loginBtn.click();
+          });
+    
     // Wait for redirect to dashboard
     await page.waitForNavigation({ waitUntil: 'networkidle2', timeout: 30000 });
     console.log('[CastleBranch] Login successful.');
