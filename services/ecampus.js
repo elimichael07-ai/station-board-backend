@@ -71,7 +71,7 @@ async function loginToECampus(page, credentials) {
   }
 
   // Fill login form
-  await page.type('input[name="userName"]', credentials.username);
+    await page.type('input[name="usernameUserInput"]', credentials.username);
   await page.type('input[name="password"]', credentials.appPassword);
   await page.click('button[type="submit"]');
 
