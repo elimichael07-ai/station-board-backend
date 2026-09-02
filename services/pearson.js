@@ -30,6 +30,7 @@ export async function scrapPearson(credentials) {
               await page.setViewport({ width: 1280, height: 720 });
 
         console.log('[Pearson] Logging into eCampus...');
+                await loginToECampus(page, credentials);
                   
         console.log('[Pearson] Navigating to EMT course home...');
               await page.goto(`${ECAMPUS_BASE}/d2l/home/${EMT_COURSE_ID}`, {
