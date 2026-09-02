@@ -51,15 +51,15 @@ export async function scrapCastleBranch(credentials) {
 }
 
 async function loginToCastleBranch(page, credentials) {
-  await page.goto(`${CASTLEBRANCH_BASE}/online/login.aspx`, {
-    waitUntil: 'networkidle2',
+    await page.goto('https://login.castlebranch.com/login', {
+      waitUntil: 'networkidle2',
     timeout: 30000,
   });
 
   // Fill login form
   try {
-    await page.type('input[id*="username"]', credentials.username);
-    await page.type('input[id*="password"]', credentials.password);
+      await page.type('input[name="username"]', credentials.username);
+          await page.type('input[name="password"]', credentials.password);
     await page.click('button:has-text("Login"), input[type="submit"]');
 
     // Wait for redirect to dashboard
