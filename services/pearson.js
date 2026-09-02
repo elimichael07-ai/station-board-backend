@@ -31,6 +31,10 @@ export async function scrapPearson(credentials) {
 
         console.log('[Pearson] Logging into eCampus...');
                 await loginToECampus(page, credentials);
+                    if (page.url().includes('ethos.blinn.edu') || page.url().includes('login.do')) {
+                                throw new Error(`Login did not complete. Still on: ${page.url()}`);
+                    }
+                console.log('[Pearson] Login confirmed, URL:', page.url());
                   
         console.log('[Pearson] Navigating to EMT course home...');
               await page.goto(`${ECAMPUS_BASE}/d2l/home/${EMT_COURSE_ID}`, {
