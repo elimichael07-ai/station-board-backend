@@ -37,8 +37,14 @@ export async function scrapPearson(credentials) {
                         timeout: 30000,
               });
 
-            await page.waitForSelector('d2l-lti-launch', { timeout: 30000 });
-              await new Promise(r => setTimeout(r, 2000));
+                try {
+                            await page.waitForSelector('d2l-lti-launch', { timeout: 30000 });
+                } catch (e) {
+                            const currentUrl = page.url();
+                            const currentTitle = await page.title().catch(() => 'unknown');
+                            throw new Error(`LTI widget not found. Current URL: ${currentUrl} | Title: ${currentTitle}`);
+                }
+            await new Promise(r => setTimeout(r, 2000));
 
         const ltiFrame = page.frames().find(f => f.url().includes('/d2l/le/lti/'));
               if (!ltiFrame) {
