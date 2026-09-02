@@ -36,12 +36,13 @@ export async function scrapPearson(credentials) {
                     }
                 console.log('[Pearson] Login confirmed, URL:', page.url());
                   
-        console.log('[Pearson] Navigating to EMT course home...');
-              await page.goto(`${ECAMPUS_BASE}/d2l/home/${EMT_COURSE_ID}`, {
-                        waitUntil: 'networkidle2',
-                        timeout: 30000,
-              });
-
+    console.log('[Pearson] Navigating to EMT course home via course tile click...');
+                await page.waitForSelector(`a[href*="${EMT_COURSE_ID}"]`, { timeout: 15000 });
+                await Promise.all([
+                            page.waitForNavigation({ waitUntil: 'networkidle2', timeout: 30000 }),
+                            page.click(`a[href*="${EMT_COURSE_ID}"]`),
+                          ]);
+            
                 try {
                             await page.waitForSelector('d2l-lti-launch', { timeout: 30000 });
                 } catch (e) {
