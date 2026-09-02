@@ -42,6 +42,8 @@ export async function scrapPearson(credentials) {
                             timeout: 30000,
                 });
 
+                await new Promise(r => setTimeout(r, 5000));
+
                 if (page.url().includes('ethos.blinn.edu') || page.url().includes('login.do')) {
                             console.log('[Pearson] Bounced back to login on course navigation, retrying login...');
                             await loginToECampus(page, credentials);
