@@ -36,12 +36,23 @@ export async function scrapPearson(credentials) {
                     }
                 console.log('[Pearson] Login confirmed, URL:', page.url());
                   
-    console.log('[Pearson] Navigating to EMT course home via course tile click...');
-                await page.waitForSelector(`a[href*="${EMT_COURSE_ID}"]`, { timeout: 15000 });
-                await Promise.all([
-                            page.waitForNavigation({ waitUntil: 'networkidle2', timeout: 30000 }),
-                            page.click(`a[href*="${EMT_COURSE_ID}"]`),
-                          ]);
+        console.log('[Pearson] Navigating to EMT course home...');
+                await page.goto(`${ECAMPUS_BASE}/d2l/home/${EMT_COURSE_ID}`, {
+                            waitUntil: 'networkidle2',
+                            timeout: 30000,
+                });
+
+                if (page.url().includes('ethos.blinn.edu') || page.url().includes('login.do')) {
+                            console.log('[Pearson] Bounced back to login on course navigation, retrying login...');
+                            await loginToECampus(page, credentials);
+                            await page.goto(`${ECAMPUS_BASE}/d2l/home/${EMT_COURSE_ID}`, {
+                                          waitUntil: 'networkidle2',
+                                          timeout: 30000,
+                            });
+                            if (page.url().includes('ethos.blinn.edu') || page.url().includes('login.do')) {
+                                          throw new Error(`Still on login after retry. URL: ${page.url()}`);
+                            }
+                }
             
                 try {
                             await page.waitForSelector('d2l-lti-launch', { timeout: 30000 });
