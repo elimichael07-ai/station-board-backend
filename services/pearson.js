@@ -30,15 +30,14 @@ export async function scrapPearson(credentials) {
               await page.setViewport({ width: 1280, height: 720 });
 
         console.log('[Pearson] Logging into eCampus...');
-              await loginToECampus(page, credentials);
-
+                  
         console.log('[Pearson] Navigating to EMT course home...');
               await page.goto(`${ECAMPUS_BASE}/d2l/home/${EMT_COURSE_ID}`, {
                         waitUntil: 'networkidle2',
                         timeout: 30000,
               });
 
-        await page.waitForSelector('d2l-lti-launch', { timeout: 15000 });
+            await page.waitForSelector('d2l-lti-launch', { timeout: 30000 });
               await new Promise(r => setTimeout(r, 2000));
 
         const ltiFrame = page.frames().find(f => f.url().includes('/d2l/le/lti/'));
