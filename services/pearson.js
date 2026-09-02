@@ -1,125 +1,132 @@
 /**
  * Pearson MyLab Brady Scraper
- * Extracts homework, quizzes, and progress data
+ * Accessed via LTI launch from the eCampus EMT course (not a standalone Pearson login).
+ * Extracts homework, quizzes, and progress data.
  */
-
 import puppeteer from 'puppeteer-extra';
 import StealthPlugin from 'puppeteer-extra-plugin-stealth';
 import axios from 'axios';
 
 puppeteer.use(StealthPlugin());
 
-const PEARSON_BASE = 'https://mylabmastering.pearson.com';
+const ECAMPUS_BASE = 'https://ecampusd2l.blinn.edu';
+const EMT_COURSE_ID = '333167';
 
 export async function scrapPearson(credentials) {
-  let browser;
-  try {
-    console.log('[Pearson] Starting scrape...');
+    let browser;
+    try {
+          console.log('[Pearson] Starting scrape...');
 
       const sessionRes = await axios.post(
-                'https://api.browserbase.com/v1/sessions',
+              'https://api.browserbase.com/v1/sessions',
         { projectId: process.env.BROWSERBASE_PROJECT_ID },
         { headers: { 'X-BB-API-Key': process.env.BROWSERBASE_API_KEY, 'Content-Type': 'application/json' } }
-              );
+            );
           browser = await puppeteer.connect({
-                    browserWSEndpoint: sessionRes.data.connectUrl,
+                  browserWSEndpoint: sessionRes.data.connectUrl,
           });
-    
-    const page = await browser.newPage();
-    await page.setViewport({ width: 1280, height: 720 });
 
-    // Login
-    console.log('[Pearson] Logging in...');
-    await loginToPearson(page, credentials);
+      const page = await browser.newPage();
+          await page.setViewport({ width: 1280, height: 720 });
 
-    // Navigate to course
-    console.log('[Pearson] Navigating to course...');
-    await page.goto(`${PEARSON_BASE}/courses/14413600/menu`, {
-      waitUntil: 'networkidle2',
-      timeout: 30000,
-    });
+      console.log('[Pearson] Logging into eCampus...');
+          await loginToECampus(page, credentials);
 
-    // Scrape assignments
-    console.log('[Pearson] Scraping assignments...');
-    const assignments = await scrapeAssignments(page);
+      console.log('[Pearson] Navigating to EMT course home...');
+          await page.goto(`${ECAMPUS_BASE}/d2l/home/${EMT_COURSE_ID}`, {
+                  waitUntil: 'networkidle2',
+                  timeout: 30000,
+          });
 
-    await browser.close();
-    console.log('[Pearson] Scrape complete.');
+      await page.waitForSelector('d2l-lti-launch', { timeout: 15000 });
+          await new Promise(r => setTimeout(r, 2000));
 
-    return {
-      assignments,
-      lastSync: new Date().toISOString(),
-    };
+      const ltiFrame = page.frames().find(f => f.url().includes('/d2l/le/lti/'));
+          if (!ltiFrame) {
+                  throw new Error('Could not find Pearson LTI launch frame on course home page');
+          }
 
-  } catch (error) {
-    console.error('[Pearson] Error:', error.message);
-    if (browser) await browser.close();
-    throw error;
-  }
+      const newTargetPromise = new Promise(resolve => {
+              browser.once('targetcreated', target => resolve(target));
+      });
+          await ltiFrame.click('a, button');
+          const newTarget = await newTargetPromise;
+          const pearsonPage = await newTarget.page();
+          await pearsonPage.waitForNavigation({ waitUntil: 'networkidle2', timeout: 30000 }).catch(() => {});
+
+      console.log('[Pearson] Landed on Pearson dashboard, scraping assignments...');
+          const assignments = await scrapeAssignments(pearsonPage);
+
+      await browser.close();
+          console.log('[Pearson] Scrape complete.');
+
+      return {
+              assignments,
+              lastSync: new Date().toISOString(),
+      };
+
+    } catch (error) {
+          console.error('[Pearson] Error:', error.message);
+          if (browser) await browser.close();
+          throw error;
+    }
 }
 
-async function loginToPearson(page, credentials) {
-  await page.goto(`${PEARSON_BASE}/courses`, {
-    waitUntil: 'networkidle2',
-    timeout: 30000,
-  });
+async function loginToECampus(page, credentials) {
+    await page.goto(`${ECAMPUS_BASE}/d2l/home`, { waitUntil: 'networkidle2', timeout: 30000 });
 
-  // Check if already logged in
-  const loggedIn = await page.$('[class*="user-menu"]');
-  if (loggedIn) {
-    console.log('[Pearson] Already logged in.');
-    return;
-  }
+  const isLoggedIn = await page.$('.d2l-navigation') !== null;
+    if (isLoggedIn) {
+          console.log('[Pearson] Already logged into eCampus.');
+          return;
+    }
 
-  // Fill login form
   try {
-    await page.type('input[name="username"]', credentials.username);
-    await page.type('input[name="password"]', credentials.password);
-    await page.click('button[type="submit"]');
+        await page.type('input[name="usernameUserInput"]', credentials.username);
+        await page.type('input[name="password"]', credentials.appPassword);
+        await page.click('button[type="submit"]');
 
-    // Wait for redirect
-    await page.waitForNavigation({ waitUntil: 'networkidle2', timeout: 30000 });
-    console.log('[Pearson] Login successful.');
+      await page.waitForNavigation({ waitUntil: 'networkidle2', timeout: 30000 });
+        console.log('[Pearson] eCampus login successful.');
   } catch (err) {
-    console.error('[Pearson] Login error:', err.message);
-    throw err;
+        console.error('[Pearson] eCampus login error:', err.message);
+        throw err;
   }
 }
 
 async function scrapeAssignments(page) {
-  try {
-    // Click on "Chapter Assignments" or "Assignments"
-    await page.click('a:has-text("Chapter Assignments")').catch(() => null);
-    await page.waitForTimeout(2000);
+    try {
+          const assignments = await page.evaluate(() => {
+                  const data = [];
+                  const tables = document.querySelectorAll('table');
 
-    const assignments = await page.evaluate(() => {
-      const rows = document.querySelectorAll('table tbody tr');
-      const data = [];
+                                                        tables.forEach(table => {
+                                                                  const rows = table.querySelectorAll('tbody tr');
+                                                                  rows.forEach(row => {
+                                                                              const cells = row.querySelectorAll('td');
+                                                                              if (cells.length >= 2) {
+                                                                                            const dueDateCell = cells[0]?.innerText || '';
+                                                                                            const nameCell = cells[1]?.innerText || '';
+                                                                                            const attemptsCell = cells[3]?.innerText || '';
 
-      rows.forEach(row => {
-        const cells = row.querySelectorAll('td');
-        if (cells.length >= 2) {
-          const dueDateCell = cells[0]?.innerText || '';
-          const nameCell = cells[1]?.innerText || '';
-          const attemptsCell = cells[3]?.innerText || '';
+                                                                                if (nameCell) {
+                                                                                                data.push({
+                                                                                                                  name: nameCell.trim(),
+                                                                                                                  dueDate: dueDateCell.trim(),
+                                                                                                                  attempts: attemptsCell.trim(),
+                                                                                                                  link: row.querySelector('a')?.href || null,
+                                                                                                  });
+                                                                                }
+                                                                              }
+                                                                  });
+                                                        });
 
-          if (nameCell) {
-            data.push({
-              name: nameCell.trim(),
-              dueDate: dueDateCell.trim(),
-              attempts: attemptsCell.trim(),
-              link: row.querySelector('a')?.href || null,
-            });
-          }
-        }
-      });
+                                                        return data;
+          });
 
-      return data;
-    });
-
-    return assignments;
-  } catch (error) {
-    console.error('[Pearson] Assignment scrape error:', error.message);
-    return [];
-  }
+      return assignments;
+    } catch (error) {
+          console.error('[Pearson] Assignment scrape error:', error.message);
+          return [];
+    }
 }
