@@ -57,8 +57,8 @@ export default async function handler(req, res) {
           try {
                     ecampusData = await scrapECampus(credentials.ecampus);
                     castlebranchData = await scrapCastleBranch(credentials.castlebranch);
-                    pearsonData = await scrapPearson(credentials.pearson);
-                    notionData = await pullNotionNotes(credentials.notion);
+    pearsonData = { disabled: true, message: 'Temporarily disabled pending Duo 2FA persistence setup' }; // TODO: re-enable once Browserbase Context login is completed
+            notionData = await pullNotionNotes(credentials.notion);
                     gmailData = await pullGmailTodos(credentials.gmail);
           } catch (err) {
                     console.error('[REFRESH] Error during sequential scrape:', err.message);
