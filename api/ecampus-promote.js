@@ -40,7 +40,8 @@ export default async function handler(req, res) {
               return res.status(400).json({ error: 'Pending session is not on eCampus.', pages: pages.map(p => p.url()) });
       }
 
-      const isLoggedIn = await mainPage.$('.d2l-navigation') !== null;
+    const title = await mainPage.title();
+          const isLoggedIn = title.toLowerCase().includes('homepage') || await mainPage.$('.d2l-navigation') !== null;
         if (!isLoggedIn) {
                 return res.status(400).json({ error: 'Pending session page found but not logged in.', url: mainPage.url() });
         }
