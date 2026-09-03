@@ -90,7 +90,7 @@ export default async function handler(req, res) {
       });
 
       // Store as PENDING - waiting for the passcode via the submit endpoint.
-      await redis.set(PENDING_KEY, { sessionId, connectUrl, storedAt: new Date().toISOString() }, { ex: 300 });
+          await redis.set(PENDING_KEY, { sessionId, connectUrl, storedAt: new Date().toISOString() }, { ex: 900 });
 
       return res.status(200).json({
               status: 'passcode_sent',
