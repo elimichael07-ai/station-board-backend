@@ -55,8 +55,8 @@ export default async function handler(req, res) {
           // Run scrapers sequentially to avoid Chromium binary spawn race conditions
           let ecampusData, castlebranchData, pearsonData, notionData, gmailData;
           try {
-                    ecampusData = await scrapECampus(credentials.ecampus);
-                    castlebranchData = await scrapCastleBranch(credentials.castlebranch);
+                        ecampusData = { disabled: true, message: 'Temporarily disabled pending Duo 2FA persistence setup' }; // TODO: re-enable once Duo bypass/message-relay is set up
+            castlebranchData = await scrapCastleBranch(credentials.castlebranch);
     pearsonData = { disabled: true, message: 'Temporarily disabled pending Duo 2FA persistence setup' }; // TODO: re-enable once Browserbase Context login is completed
             notionData = await pullNotionNotes(credentials.notion);
                     gmailData = await pullGmailTodos(credentials.gmail);
