@@ -41,7 +41,8 @@ export async function scrapECampus(credentials) {
 
         // Confirm the session is genuinely still logged in before scraping.
         await page.goto(`${BASE_URL}/d2l/home`, { waitUntil: 'networkidle2', timeout: 30000 });
-              const isLoggedIn = await page.$('.d2l-navigation') !== null;
+                  const title = await page.title();
+                const isLoggedIn = title.toLowerCase().includes('homepage') || await page.$('.d2l-navigation') !== null;
               if (!isLoggedIn) {
                         const err = new Error('Stored session is no longer logged in. Call /api/ecampus-login-init to start a new one.');
                         err.code = 'NEEDS_LOGIN';
