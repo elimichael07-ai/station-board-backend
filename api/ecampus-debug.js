@@ -1,4 +1,4 @@
-**
+/**
      * eCampus Debug
  * Dumps the current state of the active (or pending) session's pages
           * for troubleshooting. Temporary diagnostic endpoint.
