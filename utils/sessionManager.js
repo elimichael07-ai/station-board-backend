@@ -10,42 +10,46 @@
  */
 
 import { Redis } from '@upstash/redis';
-import axios from 'axios';
+import puppeteer from 'puppeteer-extra';
 
 const redis = new Redis({
-    url: process.env.KV_REST_API_URL,
-    token: process.env.KV_REST_API_TOKEN,
+      url: process.env.KV_REST_API_URL,
+      token: process.env.KV_REST_API_TOKEN,
 });
 
 const SESSION_KEY = 'ecampus:active_session';
 
 export async function getStoredSession() {
-    const data = await redis.get(SESSION_KEY);
-    return data || null;
+      const data = await redis.get(SESSION_KEY);
+      return data || null;
 }
 
 export async function storeSession(sessionId, connectUrl) {
-    await redis.set(SESSION_KEY, { sessionId, connectUrl, storedAt: new Date().toISOString() });
+      await redis.set(SESSION_KEY, { sessionId, connectUrl, storedAt: new Date().toISOString() });
 }
 
 export async function clearSession() {
-    await redis.del(SESSION_KEY);
+      await redis.del(SESSION_KEY);
 }
 
 /**
- * Checks Browserbase directly to confirm a stored session is still
- * actually alive (not just present in Redis - Redis could have a stale
- * entry for a session that already expired or was closed).
+ * Checks liveness by actually trying to connect, rather than trusting
+ * Browserbase's REST status field (which can lag right after activity
+ * on a session). Disconnects immediately after checking - does not
+ * hold the connection open.
  */
-export async function isSessionAlive(sessionId) {
-    try {
-          const res = await axios.get(`https://api.browserbase.com/v1/sessions/${sessionId}`, {
-                  headers: { 'X-BB-API-Key': process.env.BROWSERBASE_API_KEY },
-          });
-          return res.data.status === 'RUNNING';
-    } catch {
-          return false;
-    }
+export async function isSessionAlive(connectUrl) {
+      let browser;
+      try {
+              browser = await puppeteer.connect({ browserWSEndpoint: connectUrl });
+              const pages = await browser.pages();
+              const stillHasEcampus = pages.some(p => p.url().includes('ecampusd2l.blinn.edu'));
+              browser.disconnect();
+              return stillHasEcampus;
+      } catch (err) {
+              if (browser) browser.disconnect();
+              return false;
+      }
 }
 
 /**
@@ -55,20 +59,20 @@ export async function isSessionAlive(sessionId) {
  * generic failure.
  */
 export async function getActiveEcampusConnectUrl() {
-    const stored = await getStoredSession();
-    if (!stored) {
-          const err = new Error('No active eCampus session. Call /api/ecampus-login-init to start one.');
-          err.code = 'NEEDS_LOGIN';
-          throw err;
-    }
+      const stored = await getStoredSession();
+      if (!stored) {
+              const err = new Error('No active eCampus session. Call /api/ecampus-login-init to start one.');
+              err.code = 'NEEDS_LOGIN';
+              throw err;
+      }
 
-  const alive = await isSessionAlive(stored.sessionId);
-    if (!alive) {
-          await clearSession();
-          const err = new Error('Stored eCampus session has expired. Call /api/ecampus-login-init to start a new one.');
-          err.code = 'NEEDS_LOGIN';
-          throw err;
-    }
+  const alive = await isSessionAlive(stored.connectUrl);
+      if (!alive) {
+              await clearSession();
+              const err = new Error('Stored eCampus session has expired. Call /api/ecampus-login-init to start a new one.');
+              err.code = 'NEEDS_LOGIN';
+              throw err;
+      }
 
   return stored.connectUrl;
 }
