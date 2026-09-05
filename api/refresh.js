@@ -1,22 +1,15 @@
-**
-       * Station Board Master Refresh Endpoint
- * eCampus, CastleBranch, Notion, Gmail all run here (fit in 10s Hobby limit).
-              * Pearson runs separately via /api/pearson-refresh and is read from Redis cache.
-              *
-              * Usage: GET /api/refresh?token=YOUR_SECRET_TOKEN
-              */
-
-             import { scrapECampus } from '../services/ecampus.js';
+/**
+ * Station Board Master Refresh Endpoint
+ * eCampus, CastleBranch, Notion, Gmail all run here.
+ * Pearson runs via /api/pearson-refresh and is read from Redis cache.
+ * Usage: GET /api/refresh?token=YOUR_SECRET_TOKEN
+ */
+import { scrapECampus } from '../services/ecampus.js';
 import { scrapCastleBranch } from '../services/castlebranch.js';
 import { pullNotionNotes } from '../services/notion.js';
 import { pullGmailTodos } from '../services/gmail.js';
 import { getStoredCredentials, updateLastRefresh } from '../utils/credentials.js';
 import { Redis } from '@upstash/redis';
-
-const redis = new Redis({
-        url: process.env.KV_REST_API_URL,
-        token: process.env.KV_REST_API_TOKEN,
-});
 
 export default async function handler(req, res) {
         res.setHeader('Access-Control-Allow-Origin', '*');
@@ -38,7 +31,6 @@ export default async function handler(req, res) {
             try {
                         credentials = await getStoredCredentials();
             } catch (e) {
-                        console.log('[REFRESH] Could not load credentials:', e.message);
                         credentials = null;
             }
 
@@ -67,9 +59,12 @@ export default async function handler(req, res) {
                       castlebranchData = { error: true, message: err.message };
           }
 
-          // Pearson runs via /api/pearson-refresh (separate endpoint) due to Vercel
-          // Hobby 10s function limit. Read cached data from Redis instead.
+          // Pearson runs via /api/pearson-refresh; read from Redis cache here
           try {
+                      const redis = new Redis({
+                                    url: process.env.KV_REST_API_URL,
+                                    token: process.env.KV_REST_API_TOKEN,
+                      });
                       const cached = await redis.get('pearson:last_data');
                       pearsonData = cached || { cached: false, message: 'No Pearson data yet. Call /api/pearson-refresh to scrape.' };
           } catch (err) {
