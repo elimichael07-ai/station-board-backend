@@ -1,9 +1,13 @@
 {
-            "version": 2,
-            "buildCommand": "npm install",
-            "functions": {
-                          "api/*.js": {
-                                          "includeFiles": "node_modules/**"
-                          }
-            }
+              "version": 2,
+              "buildCommand": "npm install",
+              "functions": {
+                              "api/refresh.js": {
+                                                "includeFiles": "node_modules/**",
+                                                "maxDuration": 300
+                              },
+                              "api/*.js": {
+                                                "includeFiles": "node_modules/**"
+                              }
+              }
 }
