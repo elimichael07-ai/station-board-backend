@@ -52,24 +52,36 @@ export async function scrapPearson(credentials) {
                           const currentTitle = await page.title().catch(() => 'unknown');
                           throw new Error(`LTI widget not found. Current URL: ${currentUrl} | Title: ${currentTitle}`);
             }
+    // The LTI frame registers in Puppeteer's frame list under the URL
+                        // it redirects to (socket.pearsoned.com/uiservice/opener), not the
+                        // original d2l/le/lti src. Click the button inside the shadow DOM
+                        // directly rather than hunting for the frame by URL.
+                        const ltiFrame = page.frames().find(f => f.url().includes('pearsoned.com') || f.url().includes('/d2l/le/lti/'));
+                        if (!ltiFrame) {
+                                        // Fall back: try clicking the button inside the shadow DOM directly
+                                        const clicked = await page.evaluate(() => {
+                                                          const el = document.querySelector('d2l-lti-launch');
+                                                          if (!el || !el.shadowRoot) return false;
+                                                          const btn = el.shadowRoot.querySelector('button, a');
+                                                          if (btn) { btn.click(); return true; }
+                                                          const iframe = el.shadowRoot.querySelector('iframe');
+                                                          if (iframe) {
+                                                                              // Try navigating the iframe's src as a popup trigger
+                                                                              window.open(iframe.src, '_blank');
+                                                                              return true;
+                                                          }
+                                                          return false;
+                                        });
+                                        if (!clicked) {
+                                                          throw new Error('Could not find or click Pearson LTI launch element');
+                                        }
+                        }
+                    
 
-            // Poll for up to ~15s for the LTI iframe to actually attach -
-            // a single fixed wait was too short on a revisit of this page.
-            let ltiFrame = null;
-                      for (let i = 0; i < 15; i++) {
-                                    ltiFrame = page.frames().find(f => f.url().includes('/d2l/le/lti/'));
-                                    if (ltiFrame) break;
-                                    await new Promise(r => setTimeout(r, 1000));
-                      }
-                      if (!ltiFrame) {
-                                    throw new Error('Could not find Pearson LTI launch frame on course home page');
-                      }
-
-            const newTargetPromise = new Promise(resolve => {
-                          browser.once('targetcreated', target => resolve(target));
-            });
-                      await ltiFrame.click('a, button');
-                      const newTarget = await newTargetPromise;
+                        const newTargetPromise = new Promise(resolve => {
+                                        browser.once('targetcreated', target => resolve(target));
+                        });
+                                          const newTarget = await newTargetPromise;
                       const pearsonPage = await newTarget.page();
                       await pearsonPage.waitForNavigation({ waitUntil: 'networkidle2', timeout: 30000 }).catch(() => {});
 
